@@ -30,29 +30,37 @@ export default function Login() {
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select('*')
-        .eq('user_id', authData.user.id)
+        .eq('id', authData.user.id)
         .single()
 
       if (userError) throw userError
 
+      // Check if user is a coach
+      const { data: coachData } = await supabase
+        .from('coaches')
+        .select('id')
+        .eq('user_id', userData.id)
+        .maybeSingle()
+
+      // Check if user is a client
+      const { data: clientData } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('user_id', userData.id)
+        .maybeSingle()
+
+      const role = coachData ? 'coach' : 'user'
+      const profileId = clientData?.id || userData.id
+
       setAuth({
         session: authData.session,
-        role: userData.role,
-        profileId: userData.id,
-        accountId: userData.account_id,
+        role: role,
+        profileId: profileId,
+        accountId: userData.id,
+        coachId: coachData?.id,
       })
 
-      if (userData.role === 'coach' || userData.role === 'admin') {
-        const { data: coachData } = await supabase
-          .from('coaches')
-          .select('id')
-          .eq('user_id', userData.user_id)
-          .single()
-        
-        if (coachData) {
-          setAuth({ coachId: coachData.id })
-        }
-        
+      if (coachData) {
         navigate('/coach/dashboard')
       } else {
         navigate('/client/home')

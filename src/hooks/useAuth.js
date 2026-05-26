@@ -13,7 +13,7 @@ export const useAuthUser = () => {
       const { data, error } = await supabase
         .from('users')
         .select('*')
-        .eq('user_id', session.user.id)
+        .eq('id', session.user.id)
         .single()
       
       if (error) throw error
@@ -29,12 +29,20 @@ export const useCoachProfile = (userId) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('coaches')
-        .select('*')
+        .select(`
+          *,
+          user:users(full_name, email, avatar_url)
+        `)
         .eq('user_id', userId)
         .single()
       
       if (error) throw error
-      return data
+      return {
+        ...data,
+        full_name: data.user?.full_name,
+        email: data.user?.email,
+        avatar_url: data.user?.avatar_url,
+      }
     },
     enabled: !!userId,
   })
@@ -46,12 +54,21 @@ export const useClients = (coachId) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('clients')
-        .select('*')
+        .select(`
+          *,
+          user:users(full_name, email, avatar_url)
+        `)
         .eq('coach_id', coachId)
         .order('created_at', { ascending: false })
       
       if (error) throw error
-      return data
+      // Flatten user data for each client
+      return data.map(client => ({
+        ...client,
+        full_name: client.user?.full_name,
+        email: client.user?.email,
+        avatar_url: client.user?.avatar_url,
+      }))
     },
     enabled: !!coachId,
   })
@@ -63,12 +80,21 @@ export const useClient = (clientId) => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('clients')
-        .select('*')
+        .select(`
+          *,
+          user:users(full_name, email, avatar_url)
+        `)
         .eq('id', clientId)
         .single()
       
       if (error) throw error
-      return data
+      // Flatten user data
+      return {
+        ...data,
+        full_name: data.user?.full_name,
+        email: data.user?.email,
+        avatar_url: data.user?.avatar_url,
+      }
     },
     enabled: !!clientId,
   })
