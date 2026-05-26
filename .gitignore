@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Environment variables
+.env.local
+.env*.local
+
+# Agent skills and tools
+.agents/
+skills-lock.json
+
+# Build outputs
+.next/
+out/
+dist/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+
+# Supabase temp files
+supabase/.temp/
