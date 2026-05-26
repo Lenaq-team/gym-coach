@@ -1,136 +1,144 @@
-1. Install packages
-Run this command to install the required dependencies.
-Details:
-npm install @supabase/supabase-js @supabase/ssr
-Code:
-File: Code
-```
-npm install @supabase/supabase-js @supabase/ssr
+# Gym Coach 🏋️
+
+Modern web application for gym coaches and clients to manage workouts, track progress, and communicate effectively.
+
+## 🚀 Tech Stack
+
+- **Frontend:** React 19 + Vite
+- **Styling:** Tailwind CSS 4
+- **State Management:** Zustand
+- **Data Fetching:** TanStack Query v5
+- **Routing:** React Router v6
+- **Forms:** React Hook Form + Zod
+- **Backend:** Supabase (PostgreSQL + Auth + Storage)
+- **Charts:** Recharts
+- **Date Handling:** date-fns (Spanish locale)
+
+## 📱 Features
+
+### For Coaches
+- **Dashboard:** Overview of clients and recent activity
+- **Client Management:** View and manage client profiles
+- **Client Details:** Track metrics, PRs, progress photos, and workout plans
+- **Routines:** Create and manage workout plans (coming soon)
+- **Messages:** Chat with clients (coming soon)
+
+### For Clients
+- **Today's Workout:** View and complete daily workouts
+- **Weekly Plan:** See workout schedule for the week
+- **Metrics:** Track body measurements and personal records
+- **Progress Photos:** View progress photo gallery
+- **Profile:** Manage personal information
+
+## 🛠️ Setup
+
+### Prerequisites
+- Node.js 18+ 
+- npm or yarn
+- Supabase account
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/Lenaq-team/gym-coach.git
+cd gym-coach
 ```
 
-2. Add files
-Add env variables, create Supabase client helpers, and set up middleware to keep sessions refreshed.
-Code:
-File: .env.local
-```
-NEXT_PUBLIC_SUPABASE_URL=https://syjuegeiwvvbcsomsaxs.supabase.co
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_Mo1WaS_I59DmhoI2-zXXDg_aPebTZyN
+2. Install dependencies:
+```bash
+npm install
 ```
 
-File: page.tsx
-```
-1import { createClient } from '@/utils/supabase/server'
-2import { cookies } from 'next/headers'
-3
-4export default async function Page() {
-5  const cookieStore = await cookies()
-6  const supabase = createClient(cookieStore)
-7
-8  const { data: todos } = await supabase.from('todos').select()
-9
-10  return (
-11    <ul>
-12      {todos?.map((todo) => (
-13        <li key={todo.id}>{todo.name}</li>
-14      ))}
-15    </ul>
-16  )
-17}
+3. Create `.env.local` file:
+```env
+VITE_SUPABASE_URL=your_supabase_url
+VITE_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-File: utils/supabase/server.ts
-```
-1import { createServerClient } from "@supabase/ssr";
-2import { cookies } from "next/headers";
-3
-4const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-5const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-6
-7export const createClient = (cookieStore: Awaited<ReturnType<typeof cookies>>) => {
-8  return createServerClient(
-9    supabaseUrl!,
-10    supabaseKey!,
-11    {
-12      cookies: {
-13        getAll() {
-14          return cookieStore.getAll()
-15        },
-16        setAll(cookiesToSet) {
-17          try {
-18            cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
-19          } catch {
-20            // The `setAll` method was called from a Server Component.
-21            // This can be ignored if you have middleware refreshing
-22            // user sessions.
-23          }
-24        },
-25      },
-26    },
-27  );
-28};
+4. Run the development server:
+```bash
+npm run dev
 ```
 
-File: utils/supabase/client.ts
+5. Open [http://localhost:5173](http://localhost:5173)
+
+## 🗄️ Database Schema
+
+The database includes 14 tables:
+- `users` - User authentication and roles
+- `coaches` - Coach profiles
+- `clients` - Client profiles
+- `exercises` - Exercise library
+- `workout_plans` - Workout programs
+- `workout_sessions` - Daily workout sessions
+- `workout_exercises` - Exercises within sessions
+- `completed_workouts` - Workout completions
+- `completed_exercises` - Exercise completions
+- `personal_records` - Personal bests
+- `progress_measurements` - Body measurements
+- `progress_photos` - Progress photos
+- `messages` - Direct messages
+- `notifications` - System notifications
+
+See `/supabase/migrations/` for detailed schema.
+
+## 🎨 Design System
+
+### Colors
+- **Background:** #0F0F0F
+- **Cards:** #1A1A1A
+- **Accent:** #C8F135 (lime green)
+- **Text:** White / Zinc-400
+- **Borders:** Zinc-800
+
+### Layout
+- Mobile-first design (max-width: 430px)
+- Fixed top bar with notifications
+- Fixed bottom navigation
+- Safe area aware (iOS notch support)
+
+## 📦 Project Structure
+
 ```
-1import { createBrowserClient } from "@supabase/ssr";
-2
-3const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-4const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-5
-6export const createClient = () =>
-7  createBrowserClient(
-8    supabaseUrl!,
-9    supabaseKey!,
-10  );
+src/
+├── components/
+│   ├── layout/      # TopBar, BottomNav, PageWrapper
+│   ├── ui/          # Reusable UI components
+│   ├── charts/      # Chart components
+│   └── forms/       # Form components
+├── hooks/           # TanStack Query hooks
+├── pages/
+│   ├── coach/       # Coach pages
+│   ├── client/      # Client pages
+│   └── shared/      # Shared pages (Login, Notifications)
+├── stores/          # Zustand stores
+├── lib/             # Supabase client, Query client
+├── utils/           # Utility functions
+└── router/          # Route configuration
 ```
 
-File: utils/supabase/middleware.ts
-```
-1import { createServerClient } from "@supabase/ssr";
-2import { type NextRequest, NextResponse } from "next/server";
-3
-4const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-5const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY;
-6
-7export const createClient = (request: NextRequest) => {
-8  // Create an unmodified response
-9  let supabaseResponse = NextResponse.next({
-10    request: {
-11      headers: request.headers,
-12    },
-13  });
-14
-15  const supabase = createServerClient(
-16    supabaseUrl!,
-17    supabaseKey!,
-18    {
-19      cookies: {
-20        getAll() {
-21          return request.cookies.getAll()
-22        },
-23        setAll(cookiesToSet) {
-24          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-25          supabaseResponse = NextResponse.next({
-26            request,
-27          })
-28          cookiesToSet.forEach(({ name, value, options }) =>
-29            supabaseResponse.cookies.set(name, value, options)
-30          )
-31        },
-32      },
-33    },
-34  );
-35
-36  return supabaseResponse
-37};
-```
+## 🔐 Authentication
 
-3. Install Agent Skills (Optional)
-Agent Skills give AI coding tools ready-made instructions, scripts, and resources for working with Supabase more accurately and efficiently.
-Details:
-npx skills add supabase/agent-skills
-Code:
-File: Code
-```
-npx skills add supabase/agent-skills
-```
+The app uses Supabase Auth with role-based access:
+- **Admin/Coach:** Access to coach dashboard and client management
+- **User:** Access to client features and personal data
+
+## 🚧 Roadmap
+
+- [ ] Complete workout plan management
+- [ ] Exercise library with videos
+- [ ] Real-time messaging system
+- [ ] Advanced progress charts
+- [ ] Photo comparison tool
+- [ ] Push notifications
+- [ ] Export progress reports
+- [ ] Mobile app (React Native)
+
+## 📄 License
+
+ISC
+
+## 👥 Team
+
+Built by Lena Q Team

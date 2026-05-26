@@ -1,15 +1,33 @@
 {
   "name": "gym-coach",
   "version": "1.0.0",
-  "main": "index.js",
+  "type": "module",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "author": "",
   "license": "ISC",
-  "description": "",
+  "description": "Gym Coach App - Coach and Client Management Platform",
   "dependencies": {
+    "@hookform/resolvers": "^5.4.0",
     "@supabase/ssr": "^0.10.3",
-    "@supabase/supabase-js": "^2.106.2"
+    "@supabase/supabase-js": "^2.106.2",
+    "@tailwindcss/postcss": "^4.3.0",
+    "@tanstack/react-query": "^5.100.14",
+    "@vitejs/plugin-react": "^6.0.2",
+    "autoprefixer": "^10.5.0",
+    "date-fns": "^4.3.0",
+    "postcss": "^8.5.15",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "react-hook-form": "^7.76.1",
+    "react-router-dom": "^7.15.1",
+    "recharts": "^3.8.1",
+    "tailwindcss": "^4.3.0",
+    "vite": "^8.0.14",
+    "zod": "^4.4.3",
+    "zustand": "^5.0.13"
   }
 }
