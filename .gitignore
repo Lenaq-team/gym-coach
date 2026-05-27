@@ -29,3 +29,4 @@ supabase/.temp/
 
 # Vite
 .vite/
+.vercel
