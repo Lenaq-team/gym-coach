@@ -52,23 +52,55 @@ export const useClients = (coachId) => {
   return useQuery({
     queryKey: ['clients', coachId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      console.log('Fetching clients for coach:', coachId)
+      
+      // Fetch clients
+      const { data: clientsData, error: clientsError } = await supabase
         .from('clients')
-        .select(`
-          *,
-          user:users(full_name, email, avatar_url)
-        `)
+        .select('*')
         .eq('coach_id', coachId)
         .order('created_at', { ascending: false })
       
-      if (error) throw error
-      // Flatten user data for each client
-      return data.map(client => ({
-        ...client,
-        full_name: client.user?.full_name,
-        email: client.user?.email,
-        avatar_url: client.user?.avatar_url,
-      }))
+      if (clientsError) {
+        console.error('Error fetching clients:', clientsError)
+        throw clientsError
+      }
+      
+      console.log('Clients data:', clientsData)
+      
+      if (!clientsData || clientsData.length === 0) {
+        return []
+      }
+      
+      // Get user IDs
+      const userIds = clientsData.map(c => c.user_id)
+      
+      // Fetch users data
+      const { data: usersData, error: usersError } = await supabase
+        .from('users')
+        .select('id, full_name, email, avatar_url')
+        .in('id', userIds)
+      
+      if (usersError) {
+        console.error('Error fetching users:', usersError)
+        throw usersError
+      }
+      
+      console.log('Users data:', usersData)
+      
+      // Merge the data
+      const merged = clientsData.map(client => {
+        const user = usersData?.find(u => u.id === client.user_id)
+        return {
+          ...client,
+          full_name: user?.full_name,
+          email: user?.email,
+          avatar_url: user?.avatar_url,
+        }
+      })
+      
+      console.log('Merged clients:', merged)
+      return merged
     },
     enabled: !!coachId,
   })
@@ -78,23 +110,45 @@ export const useClient = (clientId) => {
   return useQuery({
     queryKey: ['client', clientId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      console.log('Fetching client:', clientId)
+      
+      // Fetch client data
+      const { data: clientData, error: clientError } = await supabase
         .from('clients')
-        .select(`
-          *,
-          user:users(full_name, email, avatar_url)
-        `)
+        .select('*')
         .eq('id', clientId)
         .single()
       
-      if (error) throw error
-      // Flatten user data
-      return {
-        ...data,
-        full_name: data.user?.full_name,
-        email: data.user?.email,
-        avatar_url: data.user?.avatar_url,
+      if (clientError) {
+        console.error('Error fetching client:', clientError)
+        throw clientError
       }
+      
+      console.log('Client data:', clientData)
+      
+      // Fetch user data
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id, full_name, email, avatar_url')
+        .eq('id', clientData.user_id)
+        .single()
+      
+      if (userError) {
+        console.error('Error fetching user:', userError)
+      }
+      
+      console.log('User data:', userData)
+      
+      // Merge data
+      const merged = {
+        ...clientData,
+        full_name: userData?.full_name,
+        email: userData?.email,
+        avatar_url: userData?.avatar_url,
+      }
+      
+      console.log('Merged client:', merged)
+      return merged
     },
     enabled: !!clientId,
   })
