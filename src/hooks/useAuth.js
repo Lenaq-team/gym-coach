@@ -105,18 +105,59 @@ export const useUpdateClient = () => {
   
   return useMutation({
     mutationFn: async ({ clientId, updates }) => {
-      const { data, error } = await supabase
+      // Get client data first to get user_id
+      const { data: clientData, error: fetchError } = await supabase
         .from('clients')
-        .update(updates)
+        .select('user_id')
         .eq('id', clientId)
-        .select()
         .single()
       
-      if (error) throw error
-      return data
+      if (fetchError) throw fetchError
+      
+      // Separate updates for users table and clients table
+      const userUpdates = {}
+      const clientUpdates = {}
+      
+      // full_name goes to users table
+      if (updates.full_name !== undefined) {
+        userUpdates.full_name = updates.full_name
+      }
+      
+      // Everything else goes to clients table
+      const clientFields = ['date_of_birth', 'gender', 'height_cm', 'weight_kg', 'fitness_level', 'goals', 'injuries', 'medical_conditions']
+      clientFields.forEach(field => {
+        if (updates[field] !== undefined) {
+          clientUpdates[field] = updates[field]
+        }
+      })
+      
+      // Update users table if needed
+      if (Object.keys(userUpdates).length > 0) {
+        const { error: userError } = await supabase
+          .from('users')
+          .update(userUpdates)
+          .eq('id', clientData.user_id)
+        
+        if (userError) throw userError
+      }
+      
+      // Update clients table if needed
+      if (Object.keys(clientUpdates).length > 0) {
+        const { data, error } = await supabase
+          .from('clients')
+          .update(clientUpdates)
+          .eq('id', clientId)
+          .select()
+          .single()
+        
+        if (error) throw error
+        return data
+      }
+      
+      return clientData
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['client', data.id] })
+      queryClient.invalidateQueries({ queryKey: ['client'] })
       queryClient.invalidateQueries({ queryKey: ['clients'] })
     },
   })
