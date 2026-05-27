@@ -156,22 +156,19 @@ export const useUpdateClient = () => {
       
       // Update clients table if needed
       if (Object.keys(clientUpdates).length > 0) {
-        const { data, error } = await supabase
+        const { error } = await supabase
           .from('clients')
           .update(clientUpdates)
           .eq('id', clientId)
-          .select('*')
-          .single()
         
         if (error) {
           console.error('Error updating client:', error)
           throw error
         }
-        return data
       }
       
-      // If only user fields were updated, return client data
-      return { id: clientData.id }
+      // Return the client ID (we don't need to select)
+      return { id: clientId }
     },
     onSuccess: (data) => {
       console.log('Update successful:', data)
