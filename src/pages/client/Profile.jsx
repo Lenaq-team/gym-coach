@@ -48,9 +48,11 @@ export default function ClientProfile() {
             <div>
               <h2 className="text-2xl font-bold">{client?.full_name || 'Usuario'}</h2>
               <p className="text-zinc-400">{session?.user?.email}</p>
-              {client?.experience_level && (
+              {client?.fitness_level && (
                 <Badge variant="success" className="mt-2">
-                  {client.experience_level}
+                  {client.fitness_level === 'beginner' ? 'Principiante' :
+                   client.fitness_level === 'intermediate' ? 'Intermedio' :
+                   client.fitness_level === 'advanced' ? 'Avanzado' : client.fitness_level}
                 </Badge>
               )}
             </div>
@@ -60,12 +62,6 @@ export default function ClientProfile() {
         <Card>
           <h3 className="font-semibold mb-3">Información Personal</h3>
           <div className="space-y-2 text-sm">
-            {client?.age && (
-              <div className="flex justify-between py-2 border-b border-zinc-800">
-                <span className="text-zinc-400">Edad</span>
-                <span>{client.age} años</span>
-              </div>
-            )}
             {client?.weight_kg && (
               <div className="flex justify-between py-2 border-b border-zinc-800">
                 <span className="text-zinc-400">Peso</span>
@@ -78,16 +74,16 @@ export default function ClientProfile() {
                 <span>{client.height_cm} cm</span>
               </div>
             )}
-            {client?.goal && (
+            {client?.goals && Array.isArray(client.goals) && client.goals.length > 0 && (
               <div className="flex justify-between py-2 border-b border-zinc-800">
-                <span className="text-zinc-400">Objetivo</span>
-                <span>{client.goal}</span>
+                <span className="text-zinc-400">Objetivos</span>
+                <span>{client.goals.join(', ')}</span>
               </div>
             )}
-            {client?.injuries && (
+            {client?.injuries && Array.isArray(client.injuries) && client.injuries.length > 0 && (
               <div className="flex justify-between py-2">
                 <span className="text-zinc-400">Lesiones</span>
-                <span>{client.injuries}</span>
+                <span>{client.injuries.join(', ')}</span>
               </div>
             )}
           </div>

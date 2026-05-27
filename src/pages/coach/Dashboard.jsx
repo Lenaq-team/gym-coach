@@ -81,11 +81,17 @@ export default function CoachDashboard() {
                   />
                   <div className="flex-1">
                     <h3 className="font-semibold">{client.full_name}</h3>
-                    <p className="text-sm text-zinc-400">{client.goal || 'Sin objetivo'}</p>
+                    <p className="text-sm text-zinc-400">
+                      {Array.isArray(client.goals) && client.goals.length > 0 
+                        ? client.goals[0] 
+                        : 'Sin objetivos'}
+                    </p>
                   </div>
-                  {client.experience_level && (
+                  {client.fitness_level && (
                     <Badge variant="default">
-                      {client.experience_level}
+                      {client.fitness_level === 'beginner' ? 'Principiante' :
+                       client.fitness_level === 'intermediate' ? 'Intermedio' :
+                       client.fitness_level === 'advanced' ? 'Avanzado' : client.fitness_level}
                     </Badge>
                   )}
                 </div>

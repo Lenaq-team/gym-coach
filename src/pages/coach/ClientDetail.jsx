@@ -57,10 +57,18 @@ export default function CoachClientDetail() {
             />
             <div className="flex-1">
               <h2 className="text-2xl font-bold">{client.full_name}</h2>
-              <p className="text-zinc-400">{client.goal || 'Sin objetivo'}</p>
+              <p className="text-zinc-400">
+                {Array.isArray(client.goals) && client.goals.length > 0 
+                  ? client.goals.join(', ') 
+                  : 'Sin objetivos'}
+              </p>
               <div className="flex gap-2 mt-2">
-                {client.experience_level && (
-                  <Badge>{client.experience_level}</Badge>
+                {client.fitness_level && (
+                  <Badge>{
+                    client.fitness_level === 'beginner' ? 'Principiante' :
+                    client.fitness_level === 'intermediate' ? 'Intermedio' :
+                    client.fitness_level === 'advanced' ? 'Avanzado' : client.fitness_level
+                  }</Badge>
                 )}
               </div>
             </div>
@@ -97,21 +105,47 @@ function InfoTab({ client }) {
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
     full_name: client.full_name || '',
-    age: client.age || '',
+    date_of_birth: client.date_of_birth || '',
     weight_kg: client.weight_kg || '',
     height_cm: client.height_cm || '',
-    goal: client.goal || '',
-    injuries: client.injuries || '',
+    goals: Array.isArray(client.goals) ? client.goals.join(', ') : '',
+    injuries: Array.isArray(client.injuries) ? client.injuries.join(', ') : '',
+    fitness_level: client.fitness_level || '',
   })
   const updateClient = useUpdateClient()
 
   const handleSave = async () => {
+    const updates = {
+      ...formData,
+      goals: formData.goals ? formData.goals.split(',').map(g => g.trim()) : [],
+      injuries: formData.injuries ? formData.injuries.split(',').map(i => i.trim()) : [],
+    }
+    
     await updateClient.mutateAsync({
       clientId: client.id,
-      updates: formData,
+      updates: updates,
     })
     setIsEditing(false)
   }
+
+  // Calculate age from date_of_birth
+  const calculateAge = (dob) => {
+    if (!dob) return null
+    const today = new Date()
+    const birthDate = new Date(dob)
+    let age = today.getFullYear() - birthDate.getFullYear()
+    const monthDiff = today.getMonth() - birthDate.getMonth()
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+      age--
+    }
+    return age
+  }
+
+  const displayAge = calculateAge(client.date_of_birth)
+  const displayGoals = Array.isArray(client.goals) ? client.goals.join(', ') : client.goals || '-'
+  const displayInjuries = Array.isArray(client.injuries) && client.injuries.length > 0 
+    ? client.injuries.join(', ') 
+    : 'Ninguna'
 
   return (
     <div className="space-y-4">
@@ -134,10 +168,10 @@ function InfoTab({ client }) {
             onChange={(e) => setFormData({...formData, full_name: e.target.value})}
           />
           <Input
-            label="Edad"
-            type="number"
-            value={formData.age}
-            onChange={(e) => setFormData({...formData, age: e.target.value})}
+            label="Fecha de nacimiento"
+            type="date"
+            value={formData.date_of_birth}
+            onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})}
           />
           <Input
             label="Peso (kg)"
@@ -153,25 +187,46 @@ function InfoTab({ client }) {
             value={formData.height_cm}
             onChange={(e) => setFormData({...formData, height_cm: e.target.value})}
           />
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">
+              Nivel de fitness
+            </label>
+            <select
+              value={formData.fitness_level}
+              onChange={(e) => setFormData({...formData, fitness_level: e.target.value})}
+              className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent"
+            >
+              <option value="">Seleccionar...</option>
+              <option value="beginner">Principiante</option>
+              <option value="intermediate">Intermedio</option>
+              <option value="advanced">Avanzado</option>
+            </select>
+          </div>
           <Input
-            label="Objetivo"
-            value={formData.goal}
-            onChange={(e) => setFormData({...formData, goal: e.target.value})}
+            label="Objetivos (separados por coma)"
+            value={formData.goals}
+            onChange={(e) => setFormData({...formData, goals: e.target.value})}
+            placeholder="Ganar masa muscular, Mejorar resistencia"
           />
           <Input
-            label="Lesiones"
+            label="Lesiones (separados por coma)"
             value={formData.injuries}
             onChange={(e) => setFormData({...formData, injuries: e.target.value})}
+            placeholder="Ninguna o lista de lesiones"
           />
         </Card>
       ) : (
         <Card className="space-y-3">
-          <InfoRow label="Edad" value={client.age ? `${client.age} años` : '-'} />
+          {displayAge && <InfoRow label="Edad" value={`${displayAge} años`} />}
           <InfoRow label="Peso" value={client.weight_kg ? `${client.weight_kg} kg` : '-'} />
           <InfoRow label="Altura" value={client.height_cm ? `${client.height_cm} cm` : '-'} />
-          <InfoRow label="Objetivo" value={client.goal || '-'} />
-          <InfoRow label="Nivel" value={client.experience_level || '-'} />
-          <InfoRow label="Lesiones" value={client.injuries || 'Ninguna'} />
+          <InfoRow label="Nivel" value={
+            client.fitness_level === 'beginner' ? 'Principiante' :
+            client.fitness_level === 'intermediate' ? 'Intermedio' :
+            client.fitness_level === 'advanced' ? 'Avanzado' : '-'
+          } />
+          <InfoRow label="Objetivos" value={displayGoals} />
+          <InfoRow label="Lesiones" value={displayInjuries} />
         </Card>
       )}
     </div>

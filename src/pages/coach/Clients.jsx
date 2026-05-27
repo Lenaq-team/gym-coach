@@ -60,13 +60,18 @@ export default function CoachClients() {
               />
               <div className="flex-1">
                 <h3 className="font-semibold text-lg">{client.full_name}</h3>
-                <p className="text-sm text-zinc-400 mb-1">{client.goal || 'Sin objetivo'}</p>
+                <p className="text-sm text-zinc-400 mb-1">
+                  {Array.isArray(client.goals) && client.goals.length > 0 
+                    ? client.goals[0] 
+                    : 'Sin objetivos'}
+                </p>
                 <div className="flex gap-2">
-                  {client.experience_level && (
-                    <Badge variant="default">{client.experience_level}</Badge>
-                  )}
-                  {client.age && (
-                    <Badge variant="default">{client.age} años</Badge>
+                  {client.fitness_level && (
+                    <Badge variant="default">{
+                      client.fitness_level === 'beginner' ? 'Principiante' :
+                      client.fitness_level === 'intermediate' ? 'Intermedio' :
+                      client.fitness_level === 'advanced' ? 'Avanzado' : client.fitness_level
+                    }</Badge>
                   )}
                 </div>
               </div>
