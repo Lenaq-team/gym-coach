@@ -52,11 +52,11 @@ export default function CoachClientDetail() {
           <div className="flex items-center gap-4">
             <Avatar 
               src={client.avatar_url} 
-              alt={client.full_name}
+              alt={client.full_name || 'Cliente'}
               size="xl"
             />
             <div className="flex-1">
-              <h2 className="text-2xl font-bold">{client.full_name}</h2>
+              <h2 className="text-2xl font-bold">{client.full_name || 'Sin nombre'}</h2>
               <p className="text-zinc-400">
                 {Array.isArray(client.goals) && client.goals.length > 0 
                   ? client.goals.join(', ') 

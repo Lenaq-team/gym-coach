@@ -36,7 +36,7 @@ export default function CoachProfile() {
           <div className="flex flex-col items-center text-center gap-4">
             <Avatar 
               src={coach?.avatar_url} 
-              alt={coach?.full_name}
+              alt={coach?.full_name || 'Coach'}
               size="xl"
             />
             <div>

@@ -77,10 +77,10 @@ export default function CoachDashboard() {
                 <div className="flex items-center gap-3">
                   <Avatar 
                     src={client.avatar_url} 
-                    alt={client.full_name}
+                    alt={client.full_name || 'Cliente'}
                   />
                   <div className="flex-1">
-                    <h3 className="font-semibold">{client.full_name}</h3>
+                    <h3 className="font-semibold">{client.full_name || 'Sin nombre'}</h3>
                     <p className="text-sm text-zinc-400">
                       {Array.isArray(client.goals) && client.goals.length > 0 
                         ? client.goals[0] 

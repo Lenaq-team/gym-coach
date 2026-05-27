@@ -42,7 +42,7 @@ export default function ClientProfile() {
           <div className="flex flex-col items-center text-center gap-4">
             <Avatar 
               src={client?.avatar_url} 
-              alt={client?.full_name}
+              alt={client?.full_name || 'Cliente'}
               size="xl"
             />
             <div>
