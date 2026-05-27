@@ -105,14 +105,21 @@ export const useUpdateClient = () => {
   
   return useMutation({
     mutationFn: async ({ clientId, updates }) => {
+      console.log('Updating client:', clientId, updates)
+      
       // Get client data first to get user_id
       const { data: clientData, error: fetchError } = await supabase
         .from('clients')
-        .select('user_id')
+        .select('user_id, id')
         .eq('id', clientId)
         .single()
       
-      if (fetchError) throw fetchError
+      if (fetchError) {
+        console.error('Error fetching client:', fetchError)
+        throw fetchError
+      }
+      
+      console.log('Client data:', clientData)
       
       // Separate updates for users table and clients table
       const userUpdates = {}
@@ -131,6 +138,9 @@ export const useUpdateClient = () => {
         }
       })
       
+      console.log('User updates:', userUpdates)
+      console.log('Client updates:', clientUpdates)
+      
       // Update users table if needed
       if (Object.keys(userUpdates).length > 0) {
         const { error: userError } = await supabase
@@ -138,7 +148,10 @@ export const useUpdateClient = () => {
           .update(userUpdates)
           .eq('id', clientData.user_id)
         
-        if (userError) throw userError
+        if (userError) {
+          console.error('Error updating user:', userError)
+          throw userError
+        }
       }
       
       // Update clients table if needed
@@ -147,18 +160,26 @@ export const useUpdateClient = () => {
           .from('clients')
           .update(clientUpdates)
           .eq('id', clientId)
-          .select()
+          .select('*')
           .single()
         
-        if (error) throw error
+        if (error) {
+          console.error('Error updating client:', error)
+          throw error
+        }
         return data
       }
       
-      return clientData
+      // If only user fields were updated, return client data
+      return { id: clientData.id }
     },
     onSuccess: (data) => {
+      console.log('Update successful:', data)
       queryClient.invalidateQueries({ queryKey: ['client'] })
       queryClient.invalidateQueries({ queryKey: ['clients'] })
     },
+    onError: (error) => {
+      console.error('Mutation error:', error)
+    }
   })
 }
