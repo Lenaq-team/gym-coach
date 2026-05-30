@@ -13,6 +13,12 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { Modal } from '@/components/ui/Modal'
 import { formatDate } from '@/utils/formatDate'
 import { formatUnit } from '@/utils/formatUnit'
+import {
+  GENDER_OPTIONS,
+  FITNESS_LEVEL_OPTIONS,
+  GENDER_LABEL,
+  FITNESS_LEVEL_LABEL,
+} from '@/constants/client.const'
 
 const TABS = ['Info', 'Métricas', 'Plan', 'PRs', 'Fotos']
 
@@ -64,11 +70,7 @@ export default function CoachClientDetail() {
               </p>
               <div className="flex gap-2 mt-2">
                 {client.fitness_level && (
-                  <Badge>{
-                    client.fitness_level === 'beginner' ? 'Principiante' :
-                    client.fitness_level === 'intermediate' ? 'Intermedio' :
-                    client.fitness_level === 'advanced' ? 'Avanzado' : client.fitness_level
-                  }</Badge>
+                  <Badge>{FITNESS_LEVEL_LABEL[client.fitness_level] ?? client.fitness_level}</Badge>
                 )}
               </div>
             </div>
@@ -152,11 +154,7 @@ function InfoTab({ client }) {
   const displayMedical = Array.isArray(client.medical_conditions) && client.medical_conditions.length > 0
     ? client.medical_conditions.join(', ')
     : 'Ninguna'
-  const displayGender =
-    client.gender === 'male' ? 'Masculino' :
-    client.gender === 'female' ? 'Femenino' :
-    client.gender === 'other' ? 'Otro' :
-    client.gender === 'prefer_not_to_say' ? 'Prefiero no decirlo' : '-'
+  const displayGender = GENDER_LABEL[client.gender] ?? '-'
 
   return (
     <div className="space-y-4">
@@ -194,10 +192,9 @@ function InfoTab({ client }) {
               className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent"
             >
               <option value="">Seleccionar...</option>
-              <option value="male">Masculino</option>
-              <option value="female">Femenino</option>
-              <option value="other">Otro</option>
-              <option value="prefer_not_to_say">Prefiero no decirlo</option>
+              {GENDER_OPTIONS.map(({ value, label }) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
             </select>
           </div>
           <Input
@@ -224,9 +221,9 @@ function InfoTab({ client }) {
               className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent"
             >
               <option value="">Seleccionar...</option>
-              <option value="beginner">Principiante</option>
-              <option value="intermediate">Intermedio</option>
-              <option value="advanced">Avanzado</option>
+              {FITNESS_LEVEL_OPTIONS.map(({ value, label }) => (
+                <option key={value} value={value}>{label}</option>
+              ))}
             </select>
           </div>
           <Input
@@ -254,11 +251,7 @@ function InfoTab({ client }) {
           <InfoRow label="Género" value={displayGender} />
           <InfoRow label="Peso" value={client.weight_kg ? `${client.weight_kg} kg` : '-'} />
           <InfoRow label="Altura" value={client.height_cm ? `${client.height_cm} cm` : '-'} />
-          <InfoRow label="Nivel" value={
-            client.fitness_level === 'beginner' ? 'Principiante' :
-            client.fitness_level === 'intermediate' ? 'Intermedio' :
-            client.fitness_level === 'advanced' ? 'Avanzado' : '-'
-          } />
+          <InfoRow label="Nivel" value={FITNESS_LEVEL_LABEL[client.fitness_level] ?? '-'} />
           <InfoRow label="Objetivos" value={displayGoals} />
           <InfoRow label="Lesiones" value={displayInjuries} />
           <InfoRow label="Condiciones médicas" value={displayMedical} />
