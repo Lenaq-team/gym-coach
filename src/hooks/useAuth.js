@@ -96,6 +96,26 @@ export const useClient = (clientId) => {
   })
 }
 
+export const useCreateClient = () => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (clientData) => {
+      const { data, error } = await supabase.functions.invoke('create-client', {
+        body: clientData,
+      })
+
+      if (error) throw error
+      if (data?.error) throw new Error(data.error)
+
+      return data.client
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clients'] })
+    },
+  })
+}
+
 export const useUpdateClient = () => {
   const queryClient = useQueryClient()
   
