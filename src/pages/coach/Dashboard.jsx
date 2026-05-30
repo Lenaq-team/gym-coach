@@ -1,7 +1,6 @@
 import { PageWrapper } from '@/components/layout/PageWrapper'
 import { useAuthStore } from '@/stores/authStore'
 import { useClients } from '@/hooks/useAuth'
-import { useCompletedWorkouts } from '@/hooks/useCompletedWorkouts'
 import { Card } from '@/components/ui/Card'
 import { Avatar } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
@@ -9,6 +8,7 @@ import { SkeletonCard } from '@/components/ui/Skeleton'
 import { EmptyState } from '@/components/ui/EmptyState'
 import { Button } from '@/components/ui/Button'
 import { useNavigate } from 'react-router-dom'
+import { getFitnessLabel } from '@/utils/formatClient'
 
 export default function CoachDashboard() {
   const navigate = useNavigate()
@@ -16,9 +16,6 @@ export default function CoachDashboard() {
   const { data: clients, isLoading } = useClients(coachId)
 
   const totalClients = clients?.length || 0
-  
-  const thisWeekStart = new Date()
-  thisWeekStart.setDate(thisWeekStart.getDate() - thisWeekStart.getDay())
   
   return (
     <PageWrapper title="Dashboard">
