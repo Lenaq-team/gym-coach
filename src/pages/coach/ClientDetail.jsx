@@ -106,19 +106,22 @@ function InfoTab({ client }) {
   const [formData, setFormData] = useState({
     full_name: client.full_name || '',
     date_of_birth: client.date_of_birth || '',
+    gender: client.gender || '',
     weight_kg: client.weight_kg || '',
     height_cm: client.height_cm || '',
+    fitness_level: client.fitness_level || '',
     goals: Array.isArray(client.goals) ? client.goals.join(', ') : '',
     injuries: Array.isArray(client.injuries) ? client.injuries.join(', ') : '',
-    fitness_level: client.fitness_level || '',
+    medical_conditions: Array.isArray(client.medical_conditions) ? client.medical_conditions.join(', ') : '',
   })
   const updateClient = useUpdateClient()
 
   const handleSave = async () => {
     const updates = {
       ...formData,
-      goals: formData.goals ? formData.goals.split(',').map(g => g.trim()) : [],
-      injuries: formData.injuries ? formData.injuries.split(',').map(i => i.trim()) : [],
+      goals: formData.goals ? formData.goals.split(',').map(g => g.trim()).filter(Boolean) : [],
+      injuries: formData.injuries ? formData.injuries.split(',').map(i => i.trim()).filter(Boolean) : [],
+      medical_conditions: formData.medical_conditions ? formData.medical_conditions.split(',').map(m => m.trim()).filter(Boolean) : [],
     }
     
     await updateClient.mutateAsync({
@@ -142,10 +145,18 @@ function InfoTab({ client }) {
   }
 
   const displayAge = calculateAge(client.date_of_birth)
-  const displayGoals = Array.isArray(client.goals) ? client.goals.join(', ') : client.goals || '-'
-  const displayInjuries = Array.isArray(client.injuries) && client.injuries.length > 0 
-    ? client.injuries.join(', ') 
+  const displayGoals = Array.isArray(client.goals) && client.goals.length > 0 ? client.goals.join(', ') : '-'
+  const displayInjuries = Array.isArray(client.injuries) && client.injuries.length > 0
+    ? client.injuries.join(', ')
     : 'Ninguna'
+  const displayMedical = Array.isArray(client.medical_conditions) && client.medical_conditions.length > 0
+    ? client.medical_conditions.join(', ')
+    : 'Ninguna'
+  const displayGender =
+    client.gender === 'male' ? 'Masculino' :
+    client.gender === 'female' ? 'Femenino' :
+    client.gender === 'other' ? 'Otro' :
+    client.gender === 'prefer_not_to_say' ? 'Prefiero no decirlo' : '-'
 
   return (
     <div className="space-y-4">
@@ -173,6 +184,22 @@ function InfoTab({ client }) {
             value={formData.date_of_birth}
             onChange={(e) => setFormData({...formData, date_of_birth: e.target.value})}
           />
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">
+              Género
+            </label>
+            <select
+              value={formData.gender}
+              onChange={(e) => setFormData({...formData, gender: e.target.value})}
+              className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent"
+            >
+              <option value="">Seleccionar...</option>
+              <option value="male">Masculino</option>
+              <option value="female">Femenino</option>
+              <option value="other">Otro</option>
+              <option value="prefer_not_to_say">Prefiero no decirlo</option>
+            </select>
+          </div>
           <Input
             label="Peso (kg)"
             type="number"
@@ -214,10 +241,17 @@ function InfoTab({ client }) {
             onChange={(e) => setFormData({...formData, injuries: e.target.value})}
             placeholder="Ninguna o lista de lesiones"
           />
+          <Input
+            label="Condiciones médicas (separados por coma)"
+            value={formData.medical_conditions}
+            onChange={(e) => setFormData({...formData, medical_conditions: e.target.value})}
+            placeholder="Ninguna o lista de condiciones"
+          />
         </Card>
       ) : (
         <Card className="space-y-3">
           {displayAge && <InfoRow label="Edad" value={`${displayAge} años`} />}
+          <InfoRow label="Género" value={displayGender} />
           <InfoRow label="Peso" value={client.weight_kg ? `${client.weight_kg} kg` : '-'} />
           <InfoRow label="Altura" value={client.height_cm ? `${client.height_cm} cm` : '-'} />
           <InfoRow label="Nivel" value={
@@ -227,6 +261,7 @@ function InfoTab({ client }) {
           } />
           <InfoRow label="Objetivos" value={displayGoals} />
           <InfoRow label="Lesiones" value={displayInjuries} />
+          <InfoRow label="Condiciones médicas" value={displayMedical} />
         </Card>
       )}
     </div>
