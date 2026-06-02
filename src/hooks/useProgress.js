@@ -1,5 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { uploadFileToS3, getVideoDuration } from '@/provider/aws_s3'
+
+const MAX_VIDEO_DURATION_SECONDS = 60
 
 export const useProgressMeasurements = (clientId) => {
   return useQuery({
@@ -86,8 +89,8 @@ export const useProgressPhotos = (clientId) => {
         .from('progress_photos')
         .select('*')
         .eq('client_id', clientId)
-        .order('recorded_at', { ascending: false })
-      
+        .order('photo_date', { ascending: false })
+
       if (error) throw error
       return data
     },
@@ -95,34 +98,34 @@ export const useProgressPhotos = (clientId) => {
   })
 }
 
-export const useUploadPhoto = () => {
+export const useUploadProgressMedia = () => {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
-    mutationFn: async ({ clientId, file, notes }) => {
-      const fileName = `${clientId}/${Date.now()}.jpg`
-      
-      const { error: uploadError } = await supabase.storage
-        .from('progress-photos')
-        .upload(fileName, file)
-      
-      if (uploadError) throw uploadError
-      
-      const { data: urlData } = supabase.storage
-        .from('progress-photos')
-        .getPublicUrl(fileName)
-      
+    mutationFn: async ({ clientId, file, notes, photoDate }) => {
+      const isVideo = file.type.startsWith('video/')
+
+      if (isVideo) {
+        const duration = await getVideoDuration(file)
+        if (duration > MAX_VIDEO_DURATION_SECONDS) {
+          throw new Error(`El video supera el límite de ${MAX_VIDEO_DURATION_SECONDS} segundos (duración: ${Math.round(duration)}s)`)
+        }
+      }
+
+      const mediaUrl = await uploadFileToS3(file, clientId)
+
       const { data, error } = await supabase
         .from('progress_photos')
         .insert({
           client_id: clientId,
-          photo_url: urlData.publicUrl,
-          recorded_at: new Date().toISOString(),
-          notes,
+          photo_url: mediaUrl,
+          photo_date: photoDate,
+          media_type: isVideo ? 'video' : 'photo',
+          notes: notes || null,
         })
         .select()
         .single()
-      
+
       if (error) throw error
       return data
     },

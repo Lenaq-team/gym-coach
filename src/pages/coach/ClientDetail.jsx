@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { PageWrapper } from '@/components/layout/PageWrapper'
 import { useClient, useUpdateClient } from '@/hooks/useAuth'
-import { useProgressMeasurements, usePersonalRecords, useProgressPhotos } from '@/hooks/useProgress'
+import { useProgressMeasurements, usePersonalRecords, useProgressPhotos, useUploadProgressMedia } from '@/hooks/useProgress'
 import { Card } from '@/components/ui/Card'
 import { Avatar } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
@@ -384,34 +384,191 @@ function PRsTab({ clientId }) {
 }
 
 function PhotosTab({ clientId }) {
-  const { data: photos, isLoading } = useProgressPhotos(clientId)
+  const { data: media, isLoading } = useProgressPhotos(clientId)
+  const uploadMedia = useUploadProgressMedia()
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [selectedFile, setSelectedFile] = useState(null)
+  const [previewUrl, setPreviewUrl] = useState(null)
+  const [notes, setNotes] = useState('')
+  const [photoDate, setPhotoDate] = useState(new Date().toISOString().split('T')[0])
+  const [uploadError, setUploadError] = useState(null)
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setSelectedFile(file)
+    setUploadError(null)
+    const url = URL.createObjectURL(file)
+    setPreviewUrl({ url, isVideo: file.type.startsWith('video/') })
+  }
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false)
+    setSelectedFile(null)
+    if (previewUrl?.url) URL.revokeObjectURL(previewUrl.url)
+    setPreviewUrl(null)
+    setNotes('')
+    setPhotoDate(new Date().toISOString().split('T')[0])
+    setUploadError(null)
+  }
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    if (!selectedFile || !photoDate) return
+    setUploadError(null)
+
+    try {
+      await uploadMedia.mutateAsync({ clientId, file: selectedFile, notes, photoDate })
+      handleCloseModal()
+    } catch (err) {
+      setUploadError(err.message)
+    }
+  }
 
   if (isLoading) return <SkeletonCard />
 
-  if (!photos?.length) {
-    return (
-      <EmptyState
-        icon="📸"
-        title="Sin fotos de progreso"
-        description="Aún no hay fotos registradas"
-      />
-    )
-  }
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button size="sm" onClick={() => setIsModalOpen(true)}>
+          + Subir archivo
+        </Button>
+      </div>
+
+      {!media?.length ? (
+        <EmptyState
+          icon="📸"
+          title="Sin multimedia de progreso"
+          description="Aún no hay fotos ni videos registrados"
+        />
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          {media.map((item) => (
+            <MediaItem key={item.id} item={item} />
+          ))}
+        </div>
+      )}
+
+      <Modal isOpen={isModalOpen} onClose={handleCloseModal} title="Subir foto o video">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">
+              Archivo <span className="text-red-400">*</span>
+            </label>
+            <input
+              type="file"
+              accept="image/*,video/*"
+              onChange={handleFileChange}
+              required
+              className="w-full text-sm text-zinc-400 file:mr-3 file:py-2 file:px-3 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-zinc-700 file:text-white hover:file:bg-zinc-600 cursor-pointer"
+            />
+            <p className="text-xs text-zinc-500 mt-1">
+              Imágenes o videos (máx. 60 segundos)
+            </p>
+          </div>
+
+          {previewUrl && (
+            <div className="rounded-lg overflow-hidden bg-zinc-900">
+              {previewUrl.isVideo ? (
+                <video
+                  src={previewUrl.url}
+                  controls
+                  className="w-full max-h-48 object-contain"
+                />
+              ) : (
+                <img
+                  src={previewUrl.url}
+                  alt="Vista previa"
+                  className="w-full max-h-48 object-contain"
+                />
+              )}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">
+              Fecha <span className="text-red-400">*</span>
+            </label>
+            <input
+              type="date"
+              value={photoDate}
+              onChange={(e) => setPhotoDate(e.target.value)}
+              required
+              className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-zinc-300 mb-1">
+              Notas
+            </label>
+            <textarea
+              value={notes}
+              onChange={(e) => setNotes(e.target.value)}
+              placeholder="Observaciones, ángulo, contexto..."
+              rows={3}
+              className="w-full px-3 py-2 bg-zinc-900 border border-zinc-800 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-accent resize-none"
+            />
+          </div>
+
+          {uploadError && (
+            <p className="text-sm text-red-400 bg-red-400/10 rounded-lg px-3 py-2">
+              {uploadError}
+            </p>
+          )}
+
+          <div className="flex gap-3 pt-1">
+            <Button
+              type="button"
+              variant="secondary"
+              className="flex-1"
+              onClick={handleCloseModal}
+              disabled={uploadMedia.isPending}
+            >
+              Cancelar
+            </Button>
+            <Button
+              type="submit"
+              className="flex-1"
+              disabled={!selectedFile || !photoDate || uploadMedia.isPending}
+            >
+              {uploadMedia.isPending ? 'Subiendo...' : 'Guardar'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  )
+}
+
+function MediaItem({ item }) {
+  const isVideo = item.media_type === 'video'
 
   return (
-    <div className="grid grid-cols-2 gap-3">
-      {photos.map((photo) => (
-        <div key={photo.id} className="relative aspect-square">
-          <img
-            src={photo.photo_url}
-            alt="Progreso"
-            className="w-full h-full object-cover rounded-lg"
-          />
-          <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-2 py-1 text-xs rounded-b-lg">
-            {formatDate(photo.recorded_at)}
-          </div>
+    <div className="relative rounded-lg overflow-hidden bg-zinc-900 aspect-square">
+      {isVideo ? (
+        <video
+          src={item.photo_url}
+          className="w-full h-full object-cover"
+          controls
+          preload="metadata"
+        />
+      ) : (
+        <img
+          src={item.photo_url}
+          alt="Progreso"
+          className="w-full h-full object-cover"
+        />
+      )}
+      <div className="absolute bottom-0 left-0 right-0 bg-black/70 px-2 py-1">
+        <div className="flex items-center justify-between gap-1">
+          <span className="text-xs text-zinc-300">{formatDate(item.photo_date)}</span>
+          {isVideo && <span className="text-xs">🎥</span>}
         </div>
-      ))}
+        {item.notes && (
+          <p className="text-xs text-zinc-400 truncate">{item.notes}</p>
+        )}
+      </div>
     </div>
   )
 }
