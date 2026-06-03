@@ -105,7 +105,17 @@ export const useCreateClient = () => {
         body: clientData,
       })
 
-      if (error) throw error
+      if (error) {
+        if (error.context instanceof Response) {
+          try {
+            const body = await error.context.json()
+            if (body?.error) throw new Error(body.error)
+          } catch (parseErr) {
+            if (parseErr !== error) throw parseErr
+          }
+        }
+        throw error
+      }
       if (data?.error) throw new Error(data.error)
 
       return data.client
