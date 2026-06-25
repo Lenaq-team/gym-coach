@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom'
 import { PageWrapper } from '@/components/layout/PageWrapper'
 import { useClient, useUpdateClient } from '@/hooks/useAuth'
 import { useProgressMeasurements, usePersonalRecords, useProgressPhotos, useUploadProgressMedia } from '@/hooks/useProgress'
+import { useClientRoutines, useRoutine, useUpdateClientRoutine } from '@/hooks/useRoutines'
+import { useAuthStore } from '@/stores/authStore'
 import { Card } from '@/components/ui/Card'
 import { Avatar } from '@/components/ui/Avatar'
 import { Badge } from '@/components/ui/Badge'
@@ -13,6 +15,7 @@ import { EmptyState } from '@/components/ui/EmptyState'
 import { Modal } from '@/components/ui/Modal'
 import { formatDate } from '@/utils/formatDate'
 import { formatUnit } from '@/utils/formatUnit'
+import { AssignRoutineModal } from '@/components/coach/AssignRoutineModal'
 import {
   GENDER_OPTIONS,
   FITNESS_LEVEL_OPTIONS,
@@ -326,12 +329,113 @@ function MetricsTab({ clientId }) {
 }
 
 function PlanTab({ clientId }) {
+  const coachId = useAuthStore((s) => s.coachId)
+  const [isAssignOpen, setIsAssignOpen] = useState(false)
+  const { data: clientRoutines, isLoading } = useClientRoutines(clientId)
+  const updateClientRoutine = useUpdateClientRoutine()
+
+  const activeRoutine = clientRoutines?.find((cr) => cr.is_active)
+  const pastRoutines = clientRoutines?.filter((cr) => !cr.is_active) ?? []
+
+  const handleDeactivate = (clientRoutineId) => {
+    updateClientRoutine.mutate({ clientRoutineId, updates: { is_active: false }, clientId })
+  }
+
+  if (isLoading) return <SkeletonCard />
+
   return (
-    <EmptyState
-      icon="📅"
-      title="Plan de entrenamiento"
-      description="Próximamente: vista del plan semanal"
-    />
+    <div className="space-y-4">
+      <div className="flex justify-end">
+        <Button size="sm" onClick={() => setIsAssignOpen(true)}>
+          + Asignar rutina
+        </Button>
+      </div>
+
+      {activeRoutine ? (
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Rutina activa</h3>
+          <ActiveRoutineCard routine={activeRoutine} onDeactivate={() => handleDeactivate(activeRoutine.id)} />
+        </div>
+      ) : (
+        <EmptyState
+          icon="📋"
+          title="Sin rutina activa"
+          description="Asigna una rutina a este cliente para que pueda ver su plan"
+        />
+      )}
+
+      {pastRoutines.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold text-zinc-400 uppercase tracking-wider">Historial</h3>
+          {pastRoutines.map((cr) => (
+            <Card key={cr.id}>
+              <div className="flex justify-between items-center">
+                <div>
+                  <div className="font-semibold text-zinc-300">{cr.routine?.name}</div>
+                  {cr.start_date && (
+                    <div className="text-xs text-zinc-500 mt-1">{formatDate(cr.start_date)}</div>
+                  )}
+                </div>
+                <Badge variant="secondary">Inactiva</Badge>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <AssignRoutineModal
+        isOpen={isAssignOpen}
+        onClose={() => setIsAssignOpen(false)}
+        clientId={clientId}
+        coachId={coachId}
+      />
+    </div>
+  )
+}
+
+function ActiveRoutineCard({ routine, onDeactivate }) {
+  const { data: fullRoutine } = useRoutine(routine.routine_id)
+
+  const totalExercises = fullRoutine?.routine_days?.reduce((acc, day) =>
+    acc + day.routine_day_sections?.reduce((a, s) =>
+      a + (s.routine_day_exercises?.length ?? 0), 0) ?? 0, 0) ?? 0
+
+  return (
+    <Card>
+      <div className="space-y-2">
+        <div className="flex justify-between items-start">
+          <div className="flex-1">
+            <div className="font-semibold text-lg">{routine.routine?.name}</div>
+            {routine.routine?.goal && (
+              <div className="text-sm text-zinc-400">{routine.routine.goal}</div>
+            )}
+          </div>
+          <Badge variant="success">Activa</Badge>
+        </div>
+        <div className="flex gap-2 flex-wrap">
+          {fullRoutine?.days_per_week && (
+            <Badge>{fullRoutine.days_per_week} días/sem</Badge>
+          )}
+          {totalExercises > 0 && (
+            <Badge>{totalExercises} ejercicios</Badge>
+          )}
+        </div>
+        {routine.start_date && (
+          <div className="text-xs text-zinc-500">Desde {formatDate(routine.start_date)}</div>
+        )}
+        {routine.notes && (
+          <div className="text-sm text-zinc-400 bg-zinc-800 rounded-lg px-3 py-2">{routine.notes}</div>
+        )}
+        <div className="pt-1">
+          <button
+            onClick={onDeactivate}
+            className="text-xs text-zinc-500 hover:text-red-400 transition-colors"
+          >
+            Desactivar rutina
+          </button>
+        </div>
+      </div>
+    </Card>
   )
 }
 

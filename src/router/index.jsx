@@ -8,6 +8,8 @@ import CoachDashboard from '@/pages/coach/Dashboard'
 import CoachClients from '@/pages/coach/Clients'
 import CoachClientDetail from '@/pages/coach/ClientDetail'
 import CoachRoutines from '@/pages/coach/Routines'
+import CreateRoutine from '@/pages/coach/CreateRoutine'
+import RoutineEditor from '@/pages/coach/RoutineEditor'
 import CoachMessages from '@/pages/coach/Messages'
 import CoachProfile from '@/pages/coach/Profile'
 
@@ -91,6 +93,22 @@ export const router = createBrowserRouter([
     element: (
       <ProtectedRoute allowedRoles={['coach', 'admin']}>
         <CoachRoutines />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/coach/routines/new',
+    element: (
+      <ProtectedRoute allowedRoles={['coach', 'admin']}>
+        <CreateRoutine />
+      </ProtectedRoute>
+    ),
+  },
+  {
+    path: '/coach/routines/:routineId',
+    element: (
+      <ProtectedRoute allowedRoles={['coach', 'admin']}>
+        <RoutineEditor />
       </ProtectedRoute>
     ),
   },
